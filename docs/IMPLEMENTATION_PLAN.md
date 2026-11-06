@@ -4,11 +4,11 @@ Status: **proposal, awaiting the owner's answers to the open questions in `PROJE
 
 ## How verification works here
 
-| Tier | Where | What it can prove |
-|---|---|---|
-| **L** — local | This cloud sandbox | Type-check, lint, unit tests, Metro bundling |
-| **C** — CI | GitHub Actions runner | Gradle build, APK produced, (optionally) emulator smoke test |
-| **D** — device | Owner's physical Android phone | Everything a user would experience |
+| Tier           | Where                          | What it can prove                                            |
+| -------------- | ------------------------------ | ------------------------------------------------------------ |
+| **L** — local  | This cloud sandbox             | Type-check, lint, unit tests, Metro bundling                 |
+| **C** — CI     | GitHub Actions runner          | Gradle build, APK produced, (optionally) emulator smoke test |
+| **D** — device | Owner's physical Android phone | Everything a user would experience                           |
 
 The sandbox cannot build an Android app (SDK and Gradle hosts are blocked; see `PROJECT_STATUS.md`). A milestone's exit criteria say which tier proves each point. **No milestone claims a build or device result until that tier has actually run.**
 
@@ -19,15 +19,17 @@ Each milestone follows `AGENTS.md` §15: inspect → list gaps → plan → impl
 Scope: configuration, tooling, skeleton. No product features.
 
 Steps:
-1. **Configuration and bundling check** *(exact next step)*: `app.json` (name, slug, dark, package ID, plugins with all four `androidExtensions` keys and PiP flag), NativeWind wiring, minimal dark `App.tsx`. Run `tsc` and `expo export --platform android`.
+
+1. **Configuration and bundling check** _(exact next step)_: `app.json` (name, slug, dark, package ID, plugins with all four `androidExtensions` keys and PiP flag), NativeWind wiring, minimal dark `App.tsx`. Run `tsc` and `expo export --platform android`.
 2. Folder skeleton from the architecture doc, theme tokens, navigation shell with the eight placeholder screens.
 3. Jest, ESLint and Prettier configured; first meaningful tests (theme/navigation smoke, a placeholder store).
 4. `README.md` written; docs updated.
 5. CI workflow `ci.yml` (typecheck, lint, test, bundle) and `build-apk.yml` modelled on the owner's `study-planner1` pipeline (Node 22, JDK 21 Temurin, `expo prebuild`, `./gradlew assembleDebug`, upload APK artifact, GitHub release). Trigger the build by `workflow_dispatch` on the milestone branch first.
 
 Exit criteria:
+
 - L: `tsc`, lint, tests, `expo export` all pass. Recorded in the log, with output.
-- C: the APK workflow completes **and** the APK artifact exists. *If NativeWind, Reanimated or MMKV fail to build, this is where it shows (risks R3, R4); fix before moving on.*
+- C: the APK workflow completes **and** the APK artifact exists. _If NativeWind, Reanimated or MMKV fail to build, this is where it shows (risks R3, R4); fix before moving on._
 - D: owner installs the APK and confirms the app launches to the dark shell. Until then, "launches" is unverified.
 
 ## Milestone 2 — Storage and state
@@ -94,18 +96,26 @@ Google Cast, DLNA, desktop sync, advanced media-source integrations, plugin syst
 
 ## Dependencies by milestone
 
-| Milestone | New packages |
-|---|---|
-| 1 | none (already installed); config only |
-| 2 | none |
-| 3 | local module `nova-saf` |
-| 4 | none |
-| 5 | none (TMDB is plain `fetch`) |
-| 6 | `react-native-google-mobile-ads@17.4.0` |
-| 7 | a support-provider SDK, **only if** the chosen provider needs one |
-| 8 | none |
-| 9 | none |
+| Milestone | New packages                                                      |
+| --------- | ----------------------------------------------------------------- |
+| 1         | none (already installed); config only                             |
+| 2         | none                                                              |
+| 3         | local module `nova-saf`                                           |
+| 4         | none                                                              |
+| 5         | none (TMDB is plain `fetch`)                                      |
+| 6         | `react-native-google-mobile-ads@17.4.0`                           |
+| 7         | a support-provider SDK, **only if** the chosen provider needs one |
+| 8         | none                                                              |
+| 9         | none                                                              |
 
 ## Risks to watch while building
 
 R1 slow CI loop · R2 URI persistence · R3 NativeWind compatibility · R4 MMKV/Nitro and architecture · R5 PiP/fullscreen/subtitles on device · R6 cleartext · R7 AdMob/Play accounts · R8 blocked Expo services · R9 Vega licence. Details and mitigations: `PROJECT_STATUS.md` §4.
+
+## Progress (2026-11-06)
+
+**Milestone 1: implemented, awaiting device confirmation.** Steps 1 to 5 are done in code. The L-tier exit criteria passed (type-check, lint, format, 36 tests, Metro bundle, and a successful `expo prebuild` whose output was inspected). The C-tier criterion (the APK workflow completes) and the D-tier criterion (the app launches on a phone) have **not** been met: neither has been attempted. Milestone 2 must not start until both are.
+
+Parts of Milestone 2 were pulled forward because Phase 1 needed them: the repositories for library, remote sources, watchlist, progress and settings, and their stores and tests. Still to do in Milestone 2: playback history, and the device check that data survives a force-stop.
+
+Changes to the plan: Remote Sources is a tab; sample data is controlled by one flag so preview APKs can include it; `build-apk.yml` builds the **release** variant (JavaScript bundled in) because a debug build needs a dev server.

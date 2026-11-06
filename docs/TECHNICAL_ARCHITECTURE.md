@@ -6,17 +6,17 @@ Status: **proposal.** Nothing here is implemented yet. Labels: **[VERIFIED]** ob
 
 New project (no existing application code). Android first.
 
-| Layer | Choice | Basis |
-|---|---|---|
-| Runtime | React Native 0.88.1, React 19.3.0, TypeScript ~6.0.3 | [VERIFIED] installed; Expo SDK 58 pins these |
-| Platform | Expo SDK 58 (`expo@58.0.23`) using a **development build** and `expo prebuild` | [VERIFIED] SDK 58 is the `latest` tag |
-| Not Expo Go | Nova uses native modules (video, MMKV/Nitro, ads, a local module) | [ASSUMPTION] Expo Go does not bundle these; a dev build is required either way, as `AGENTS.md` instructs |
-| Styling | NativeWind 4.2.7 on Tailwind 3.4 | [VERIFIED] installed; **compatibility with RN 0.88 + Reanimated 4 untested** (risk R3) |
-| Navigation | React Navigation 7 (native-stack + bottom-tabs) | [VERIFIED] installed |
-| Player | `react-native-video` 6.19.3 (Media3/ExoPlayer 1.8.0) | [VERIFIED] v6.19.3 is `latest`; v7 is `beta` |
-| State | Zustand 5 | [VERIFIED] installed |
-| Persistence | `react-native-mmkv` 4.3.2 (+ `react-native-nitro-modules`) | [VERIFIED] installed; New Architecture requirement unverified (R4) |
-| Ads | `react-native-google-mobile-ads` 17.4.0 | [VERIFIED] exists, Apache-2.0; not installed yet |
+| Layer       | Choice                                                                         | Basis                                                                                                    |
+| ----------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| Runtime     | React Native 0.88.1, React 19.3.0, TypeScript ~6.0.3                           | [VERIFIED] installed; Expo SDK 58 pins these                                                             |
+| Platform    | Expo SDK 58 (`expo@58.0.23`) using a **development build** and `expo prebuild` | [VERIFIED] SDK 58 is the `latest` tag                                                                    |
+| Not Expo Go | Nova uses native modules (video, MMKV/Nitro, ads, a local module)              | [ASSUMPTION] Expo Go does not bundle these; a dev build is required either way, as `AGENTS.md` instructs |
+| Styling     | NativeWind 4.2.7 on Tailwind 3.4                                               | [VERIFIED] installed; **compatibility with RN 0.88 + Reanimated 4 untested** (risk R3)                   |
+| Navigation  | React Navigation 7 (native-stack + bottom-tabs)                                | [VERIFIED] installed                                                                                     |
+| Player      | `react-native-video` 6.19.3 (Media3/ExoPlayer 1.8.0)                           | [VERIFIED] v6.19.3 is `latest`; v7 is `beta`                                                             |
+| State       | Zustand 5                                                                      | [VERIFIED] installed                                                                                     |
+| Persistence | `react-native-mmkv` 4.3.2 (+ `react-native-nitro-modules`)                     | [VERIFIED] installed; New Architecture requirement unverified (R4)                                       |
+| Ads         | `react-native-google-mobile-ads` 17.4.0                                        | [VERIFIED] exists, Apache-2.0; not installed yet                                                         |
 
 Why `react-native-video` v6 and not v7: v7 is still published only under the `beta` tag and its README warns of expected breaking changes and missing features [VERIFIED]. v6 is the stable `latest`. Revisit after Nova's first stable release.
 
@@ -72,6 +72,7 @@ nova/
 `AGENTS.md` suggests the module list without a `src/` prefix; using `src/` is a repository-layout choice only. Added beyond the suggested list: `consent/` (kept apart from `ads/` so consent logic is testable and reusable), `metadata/`, `cast/`, `theme/`, and `modules/nova-saf/`.
 
 ### Dependency rules (enforced by review and lint rules)
+
 - `screens` and `components` depend on `store`, `hooks`, `types`; **never** import `services/*` directly except through hooks.
 - `services/*` never import React components.
 - `services/ads` and `services/consent` are the only code that imports `react-native-google-mobile-ads`. The rest of the app sees an interface, so ads can be switched off or fail without affecting playback.
@@ -81,14 +82,50 @@ nova/
 
 ```ts
 type MediaSource =
-  | { kind: 'local';  uri: string; persisted: boolean }          // content:// or file://
-  | { kind: 'remote'; url: string; format: 'progressive' | 'hls' | 'dash'; headers?: Record<string,string> };
+  | { kind: 'local'; uri: string; persisted: boolean } // content:// or file://
+  | {
+      kind: 'remote';
+      url: string;
+      format: 'progressive' | 'hls' | 'dash';
+      headers?: Record<string, string>;
+    };
 
-interface LibraryItem { id; title; year?; genres: string[]; posterUri?; source: MediaSource; addedAt; metadata: 'manual' | 'tmdb' }
-interface PlaybackProgress { itemId; positionMs; durationMs; updatedAt; completed: boolean }
-interface HistoryEntry { itemId; watchedAt; positionMs }
-interface RemoteSourceRecord { id; label; url; addedAt; lastCheckedAt?; lastStatus? }
-interface Settings { adsEnabled: boolean; defaultSpeed: number; resumeEnabled: boolean; tmdbEnabled: boolean }
+interface LibraryItem {
+  id;
+  title;
+  year?;
+  genres: string[];
+  posterUri?;
+  source: MediaSource;
+  addedAt;
+  metadata: 'manual' | 'tmdb';
+}
+interface PlaybackProgress {
+  itemId;
+  positionMs;
+  durationMs;
+  updatedAt;
+  completed: boolean;
+}
+interface HistoryEntry {
+  itemId;
+  watchedAt;
+  positionMs;
+}
+interface RemoteSourceRecord {
+  id;
+  label;
+  url;
+  addedAt;
+  lastCheckedAt?;
+  lastStatus?;
+}
+interface Settings {
+  adsEnabled: boolean;
+  defaultSpeed: number;
+  resumeEnabled: boolean;
+  tmdbEnabled: boolean;
+}
 ```
 
 Storage: MMKV, one namespaced key per repository, each value JSON with a `schemaVersion`; migrations live in `services/storage`. Zustand stores hydrate from MMKV synchronously at startup (MMKV is synchronous), so local browsing needs no network [satisfies `AGENTS.md` §9]. The shape above is a proposal, not an implemented schema.
@@ -100,6 +137,7 @@ Storage: MMKV, one namespaced key per repository, each value JSON with a `schema
 - **[ASSUMPTION]** Grants from `ACTION_OPEN_DOCUMENT` last only until reboot unless persisted with `takePersistableUriPermission`, so a library of picked videos would silently break.
 
 Design:
+
 1. Call the picker with `copyToCacheDirectory: false` (never copy multi-gigabyte videos).
 2. Pass the URI to `nova-saf`, a ~50-line Kotlin Expo module that calls `contentResolver.takePersistableUriPermission` and exposes `hasAccess(uri)`.
 3. Store `persisted: true/false`. On open, check `hasAccess`; if it failed, show "Video no longer accessible — locate it again" and keep the library record (do not delete).
@@ -116,14 +154,14 @@ Never assume a filesystem path; the model stores `uri` as an opaque string.
 
 ## 7. Player
 
-| Feature | Plan | Library evidence | Device-verified |
-|---|---|---|---|
-| Play/pause, seek, speed, buffering | Standard props/events | Core v6 API | No |
-| Resume, history | `services/playback` writes position on interval, pause and exit | n/a (app logic) | No |
-| Subtitles | `selectedTextTrack` (`system`/`disabled`/`title`/`language`/`index`) and sidecar `source.textTracks` | [VERIFIED] types | No |
-| Audio tracks | `selectedAudioTrack` (same selector types) | [VERIFIED] types | No |
-| Fullscreen | **First choice:** the library's `presentFullscreenPlayer()` / `dismissFullscreenPlayer()` ref methods, which exist and reach `setFullscreen` in the Android player view [VERIFIED in `Video.tsx`, `VideoManagerModule.kt`, `ReactExoplayerView.java`]. The `fullscreen`, `fullscreenAutorotate` and `fullscreenOrientation` *props* are marked iOS. **Fallback:** Nova-built landscape + immersive mode via `expo-screen-orientation` if the library version misbehaves with Nova's custom controls | Methods exist; behaviour not run | No |
-| Picture-in-picture | Plugin flag + `enterPictureInPictureOnLeave` and `enterPictureInPicture()`/`exitPictureInPicture()` refs, `onPictureInPictureStatusChanged` | [VERIFIED] present in source | No |
+| Feature                            | Plan                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Library evidence                 | Device-verified |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | --------------- |
+| Play/pause, seek, speed, buffering | Standard props/events                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Core v6 API                      | No              |
+| Resume, history                    | `services/playback` writes position on interval, pause and exit                                                                                                                                                                                                                                                                                                                                                                                                                                     | n/a (app logic)                  | No              |
+| Subtitles                          | `selectedTextTrack` (`system`/`disabled`/`title`/`language`/`index`) and sidecar `source.textTracks`                                                                                                                                                                                                                                                                                                                                                                                                | [VERIFIED] types                 | No              |
+| Audio tracks                       | `selectedAudioTrack` (same selector types)                                                                                                                                                                                                                                                                                                                                                                                                                                                          | [VERIFIED] types                 | No              |
+| Fullscreen                         | **First choice:** the library's `presentFullscreenPlayer()` / `dismissFullscreenPlayer()` ref methods, which exist and reach `setFullscreen` in the Android player view [VERIFIED in `Video.tsx`, `VideoManagerModule.kt`, `ReactExoplayerView.java`]. The `fullscreen`, `fullscreenAutorotate` and `fullscreenOrientation` _props_ are marked iOS. **Fallback:** Nova-built landscape + immersive mode via `expo-screen-orientation` if the library version misbehaves with Nova's custom controls | Methods exist; behaviour not run | No              |
+| Picture-in-picture                 | Plugin flag + `enterPictureInPictureOnLeave` and `enterPictureInPicture()`/`exitPictureInPicture()` refs, `onPictureInPictureStatusChanged`                                                                                                                                                                                                                                                                                                                                                         | [VERIFIED] present in source     | No              |
 
 Best-effort rule (from `AGENTS.md` §7): a control appears only if the loaded media reports that capability. Missing capability means a hidden control, never a fake one.
 
@@ -140,13 +178,13 @@ Best-effort rule (from `AGENTS.md` §7): a control appears only if the loaded me
 
 Features Vega advertises, from its README [VERIFIED]: stream and download; Google Cast and DLNA with a custom remuxer; watchlist; external-player support; desktop sync; custom plugins. Its stack overlaps with Nova's (React Native, Expo, NativeWind, React Navigation, `react-native-video`, Zustand) [VERIFIED from its `package.json`]; it uses a TV-oriented React Native fork (`react-native-tvos`) rather than stock React Native. MMKV use was only seen on the repository's web page, not in `package.json`.
 
-| Vega capability | Nova v1 | Note |
-|---|---|---|
-| Watchlist | Yes | Original implementation |
-| Local playback | Yes | Vega's focus is streaming; this is Nova's own scope |
-| Download | No | Not in `AGENTS.md` v1 scope |
-| Cast / DLNA | Later | Interface only (§10) |
-| Desktop sync | Later | Not in v1 |
+| Vega capability              | Nova v1               | Note                                                                                                     |
+| ---------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------- |
+| Watchlist                    | Yes                   | Original implementation                                                                                  |
+| Local playback               | Yes                   | Vega's focus is streaming; this is Nova's own scope                                                      |
+| Download                     | No                    | Not in `AGENTS.md` v1 scope                                                                              |
+| Cast / DLNA                  | Later                 | Interface only (§10)                                                                                     |
+| Desktop sync                 | Later                 | Not in v1                                                                                                |
 | Plugins and provider sources | **Never as designed** | `AGENTS.md` bans unauthorised catalogues and untrusted plugin code; Nova accepts only URLs the user adds |
 
 Licence position [VERIFIED]: PolyForm Noncommercial 1.0.0 after commit `9ccc0c8`, explicitly treating ads as commercial use. Nova copies no Vega code, assets, logos or names, and does not mimic its interface.
@@ -164,10 +202,25 @@ Licence position [VERIFIED]: PolyForm Noncommercial 1.0.0 after commit `9ccc0c8`
 
 ## 12. Testing strategy
 
-| Where | What |
-|---|---|
-| Local (this sandbox) | `tsc --noEmit`, ESLint, Jest (storage repositories, URL validator, format detector, error mapper, resume logic, stores), Metro bundle via `expo export` |
-| GitHub Actions | The same checks on every push, plus `expo prebuild` and `gradlew assembleDebug` |
+| Where                   | What                                                                                                                                                                              |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local (this sandbox)    | `tsc --noEmit`, ESLint, Jest (storage repositories, URL validator, format detector, error mapper, resume logic, stores), Metro bundle via `expo export`                           |
+| GitHub Actions          | The same checks on every push, plus `expo prebuild` and `gradlew assembleDebug`                                                                                                   |
 | Physical device (owner) | All items in `AGENTS.md` §14: launch, picker, local and remote playback, formats, persistence, history, resume, offline, ad placement and consent, support screen, error handling |
 
 A feature is described as working only after the row that can actually test it has passed.
+
+## 13. Phase 1 implementation notes (2026-11-06)
+
+What was built, and where it differs from the proposal above.
+
+- **Tabs:** five bottom tabs (Home, Library, Sources, Watchlist, Settings). Movie Details, Player and Support Nova are stack screens above the tabs. Remote Sources is a tab rather than a stack screen.
+- **Storage:** `KeyValueStore` (MMKV and in-memory implementations) and `createRepository` (versioned envelope `{ v, data }`, reads never throw, unreadable data is kept in `<key>.corrupt`). Concrete repositories: library, remote sources, watchlist, progress, settings. History is not built yet.
+- **Stores:** one generic `createListStore` serves the library and remote sources. Every store takes its repository as an argument, so tests create fresh ones on an in-memory store.
+- **Sample data:** `src/config/placeholderData.ts` (invented titles, reserved `example.com` URLs, every record flagged `isPlaceholder`) and `src/services/dev/placeholders.ts` (load, clear, first-run seed). Gated by `SAMPLE_DATA_ENABLED` in `src/config/flags.ts`: on in development and in builds made with `EXPO_PUBLIC_NOVA_SAMPLE_DATA=1`.
+- **Design tokens:** `src/theme/tokens.js` feeds `tailwind.config.js` and is typed by `tokens.d.ts`. Contrast values are computed and recorded in that file.
+- **Player screen:** a placeholder with no video component; it says so on screen. `react-native-video` is installed and configured natively but not yet used by any screen.
+- **Not built:** `services/media`, `services/playback`, `services/ads`, `services/consent`, `services/support`, `services/metadata`, `services/cast`, `modules/nova-saf`. They appear in the plan for later milestones.
+- **TypeScript 6 settings:** no `baseUrl`; `paths` only; `"types": ["jest"]`; CSS modules declared in `nativewind-env.d.ts`.
+- **Dependency note:** `expo-font`, `expo-asset` and `babel-preset-expo` are installed at the project root because npm otherwise nests them out of reach.
+- **Unchanged and still unverified on a device:** everything in §7 (player features), §5 (local media), and §8 (ads).

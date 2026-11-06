@@ -1,120 +1,128 @@
 # Project Nova — Status
 
-Last updated: 2026-11-06 · Branch: `milestone-1-scaffold` · Phase: **Milestone 0 (inspection and planning) complete; no app features implemented**
+Last updated: 2026-11-06 · Branch: `milestone-1-scaffold` · Phase: **Phase 1 (project foundation) implemented; checks pass in the sandbox; never built into an APK and never run on a device**
 
-Legend used in every planning document:
+Legend used in every document:
 
-- **[VERIFIED]** I observed it directly in this session (command output, package source, or a fetched page). The evidence is named.
-- **[ASSUMPTION]** Believed true from general platform knowledge but not checked here. Must be confirmed before relying on it.
-- **[UNVERIFIED]** Cannot be checked in this cloud environment at all (needs CI or a physical device).
+- **[VERIFIED]** I observed it directly (command output, package source, generated files). The evidence is named.
+- **[ASSUMPTION]** Believed true from general platform knowledge but not checked here.
+- **[UNVERIFIED]** Cannot be checked in this cloud environment (needs CI or a physical device).
 
-## 1. What has and has not been done
+## 1. Where things stand
 
-| Item | State |
-|---|---|
-| Repository inspected | Done |
-| Environment and Android tooling inspected | Done |
-| Dependency compatibility checked (from package metadata and source) | Done |
-| Vega license re-checked | Done |
-| Planning documents | This file, `DEVELOPMENT_LOG.md`, `docs/TECHNICAL_ARCHITECTURE.md`, `docs/IMPLEMENTATION_PLAN.md` |
-| Application features (library, player, ads, support) | **Not started** |
-| Android build (any kind) | **Never run. No APK exists.** |
-| Device or emulator test | **Never run.** |
-| Unit tests / lint | **None written yet.** Jest, ESLint and Prettier are installed but not configured. |
-| GitHub Actions workflow | **Not created yet.** |
+| Item                                                                                                   | State                                                |
+| ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| App configuration (`app.json`, Babel, Metro, NativeWind, Jest, ESLint, Prettier)                       | Done                                                 |
+| Storage layer (key-value interface, MMKV + in-memory, versioned repositories with corruption recovery) | Done                                                 |
+| Zustand stores (library, remote sources, watchlist, playback progress, settings)                       | Done                                                 |
+| Dark theme and design tokens                                                                           | Done                                                 |
+| Reusable components (Button, Card, Chip, MediaCard, Screen, Loading / Empty / Error states, Skeleton)  | Done                                                 |
+| Eight screens and bottom navigation (5 tabs + 3 stack screens)                                         | Done (Player and Support are placeholders by design) |
+| Placeholder data for development                                                                       | Done                                                 |
+| Navigation and storage tests                                                                           | Done: 36 tests                                       |
+| CI workflows (`ci.yml`, `build-apk.yml`)                                                               | Written; **never run yet**                           |
+| Ads, payments, real playback, adding videos or links                                                   | **Not started, on purpose** (later phases)           |
+| Android build (Gradle / APK)                                                                           | **Never run. No APK exists.**                        |
+| App launch on an emulator or phone, visual check                                                       | **Never done.**                                      |
 
-## 2. Verified facts
+## 2. What was verified in Phase 1, and how
 
-### Repository
-- **[VERIFIED]** This is a **new project**. `main` contains only `AGENTS.md` (the master instructions, 327 lines, read in full) and an empty-looking `README.md` (6 bytes, just `# Nova`). Evidence: `git ls-files`, `git log`.
-- **[VERIFIED]** Branch `milestone-1-scaffold` adds a blank Expo SDK 58 TypeScript template plus installed dependencies (commit `1632da7`). Nothing is merged to `main`.
-- **[VERIFIED]** The repository is public (`therookie-official/Nova`), and this session has push access.
+All run in the cloud sandbox on 2026-11-06, after the final code change.
 
-### Environment (cloud sandbox)
-| Tool | Result |
-|---|---|
-| Node.js | v22.23.4 |
-| npm | 10.9.9 |
-| Java / javac | OpenJDK 21.0.12.1 |
-| Gradle | 8.14.3 at `/opt/gradle` |
-| Docker | client 29.9.2 present; **daemon not verified** |
-| GitHub CLI | 2.89.0 |
-| CPU / RAM | 2 vCPU / 7 GB |
-| Android SDK | **Absent.** `ANDROID_HOME` and `ANDROID_SDK_ROOT` are empty; no `adb`, `sdkmanager` or `aapt2` on PATH. |
-| EAS CLI | Not installed |
+| Check                     | Command                                             | Result                                                                                                   |
+| ------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Type-check                | `npx tsc --noEmit`                                  | Exit 0, strict mode, tests included                                                                      |
+| Lint                      | `npx eslint .`                                      | Exit 0                                                                                                   |
+| Formatting                | `npx prettier --check .`                            | Exit 0                                                                                                   |
+| Tests                     | `npx jest`                                          | 4 suites, **36 tests passed**, 0 failed, no console warnings                                             |
+| JavaScript bundle         | `npx expo export --platform android` (offline)      | Succeeded: 1,347 modules compiled to a 3.3 MB Hermes bytecode bundle; only the Ionicons font is included |
+| Native project generation | `npx expo prebuild --platform android --no-install` | Succeeded; generated files inspected (see below)                                                         |
+| Colour contrast           | WCAG formula in a script                            | Every text/background pair used is ≥ 5.1:1 (AA needs 4.5:1); body text 16–17.6:1                         |
+| Workflow files            | YAML parse                                          | Both files parse. **Not executed.**                                                                      |
 
-- **[VERIFIED] No Android build is possible in this sandbox.** The network proxy answers HTTP 403 to `dl.google.com` (Android SDK downloads), `services.gradle.org`, `cdp.expo.dev` and `repo.maven.apache.org` (Maven Central). `maven.google.com`, `plugins.gradle.org`, `jitpack.io` and `api.expo.dev` also failed to connect. Only `registry.npmjs.org` and `api.github.com` were reachable. Evidence: `curl` probes and the proxy status endpoint.
-- **[VERIFIED]** Consequence: JavaScript and TypeScript checks (type-check, lint, Jest, Metro bundling) can run here. Gradle/APK builds must run on a GitHub-hosted runner, and device behaviour can only be checked on a physical phone.
-- **[VERIFIED]** The same blocking made `expo install` and two `expo-doctor` checks fail (Expo config schema and React Native Directory). `expo-doctor` passed 18 of 20 checks; the 2 failures were network failures, not project errors.
-- **[VERIFIED]** `tsc --noEmit` printed no errors on the scaffold. (The exit status was not captured directly, so treat this as "no diagnostics printed".)
+What the generated Android project shows [VERIFIED by reading it]:
 
-### Versions in the project now
-Expo `58.0.23` (the current `latest` tag), React Native `0.88.1`, React `19.3.0`, TypeScript `~6.0.3`. All SDK-bound packages use the versions in Expo's own `bundledNativeModules.json`.
+- `RNVideo_useExoplayerHls=true`, `RNVideo_useExoplayerDash=true`, `RNVideo_useExoplayerSmoothStreaming=true`, `RNVideo_useExoplayerRtsp=false`.
+- `android:supportsPictureInPicture="true"` on `MainActivity`.
+- `applicationId` and namespace `com.therookieofficial.nova`.
+- `newArchEnabled=true`, `hermesEnabled=true`, `edgeToEdgeEnabled=true`.
+- Gradle wrapper 9.4.1. Release **and** debug builds use the debug signing config, so a release APK is installable but is **not** store-signed.
+- Main-manifest permissions after my change: `INTERNET`, `READ_EXTERNAL_STORAGE` (API ≤ 32 only), `VIBRATE`. `SYSTEM_ALERT_WINDOW` and `WRITE_EXTERNAL_STORAGE` are marked for removal via `blockedPermissions`.
+- The main manifest does not enable cleartext HTTP; only the debug manifest does.
 
-### React Native 0.88 Android toolchain (from `react-native/gradle/libs.versions.toml`)
-- **[VERIFIED]** minSdk 24, targetSdk 36, compileSdk 37, buildTools 37.0.0, NDK 27.1.12297006, Android Gradle Plugin 9.2.1, Kotlin 2.2.0.
+### What these checks do NOT prove
 
-### Vega reference
-- **[VERIFIED]** Current Vega `HEAD` is `073d47e` (2026-11-03). Its `LICENSE` states that everything **after commit `9ccc0c8` (2026-10-02)** is under the **PolyForm Noncommercial License 1.0.0**, and says in plain words that "showing ads" counts as commercial use needing a separate licence. Earlier commits are Apache-2.0, and third-party contributions are Apache-2.0 per `NOTICE`. The licensor name and contact fields are still unfilled placeholders (`[LICENSOR NAME]`).
-- **Decision:** Nova copies **no** Vega code, assets, names or branding, including the Apache-era code. Vega is used only as a feature reference (see `docs/TECHNICAL_ARCHITECTURE.md` §9).
+- **The app launches.** Nothing ran on Android. Jest renders screens in a test renderer, which proves the screens mount and the navigation wiring works, not that they look right or start on a phone.
+- **Styling.** NativeWind compiles and bundles. Whether classes render as intended (spacing, colours, large text) is unchecked until someone looks at it on a device.
+- **Real persistence.** In Jest, MMKV is replaced by an in-memory stand-in (`jest.setup.js`), so storage logic is tested but the **native MMKV module has never run** here.
+- **Reanimated / Worklets / Nitro at runtime**, and the Gradle build of all native modules.
+- **CI.** The workflows have never run on GitHub.
+- **Release behaviour.** Whether `expo-dev-client` stays out of the release variant is [ASSUMPTION].
+- **Accessibility with TalkBack.** Labels and roles are set in code; nobody has listened to it.
 
-## 3. Dependencies
+## 3. Environment facts (unchanged from Milestone 0)
 
-### Installed on `milestone-1-scaffold`
-| Package | Version | Purpose |
-|---|---|---|
-| expo | ~58.0.23 | Framework |
-| react-native | 0.88.1 | Runtime |
-| react | 19.3.0 | UI |
-| react-native-video | ^6.19.3 | Player (stable line; v7 is still beta) |
-| react-native-mmkv | ^4.3.2 | Persistence |
-| react-native-nitro-modules | ^0.37.2 | Required by MMKV 4 |
-| zustand | ^5.0.16 | State |
-| nativewind | ^4.2.7 | Styling |
-| tailwindcss (dev) | ^3.4.19 | NativeWind peer |
-| react-native-reanimated | ^4.7.1 | Animation (peer range RN 0.86–0.88, Worklets 0.13.x: satisfied) |
-| react-native-worklets | ^0.13.0 | Reanimated peer |
-| react-native-safe-area-context | ~5.11.1 | Insets |
-| react-native-screens | ~4.30.1 | Navigation |
-| @react-navigation/native, native-stack, bottom-tabs | ^7.x | Navigation |
-| expo-document-picker | ~58.0.4 | Local video selection |
-| expo-dev-client | ~58.0.18 | Development build |
-| expo-build-properties | ~58.0.12 | Android build properties |
-| expo-keep-awake, expo-screen-orientation | ~58.0.x | Player screen behaviour |
-| jest, jest-expo, @testing-library/react-native, eslint, eslint-config-expo, prettier, @types/jest | various | Tooling (installed, **not yet configured**) |
+- **[VERIFIED]** Node v22.23.4, npm 10.9.9, OpenJDK 21.0.12.1, Gradle 8.14.3, GitHub CLI 2.89.0, 2 vCPU / 7 GB. **No Android SDK** (`ANDROID_HOME` empty; no `adb`, `sdkmanager`, `aapt2`).
+- **[VERIFIED]** The proxy blocks `dl.google.com`, `services.gradle.org`, `cdp.expo.dev` and Maven Central, so **no Android build is possible in this sandbox**. Only npm and the GitHub API are reachable. APKs must come from a GitHub-hosted runner.
+- **[VERIFIED]** React Native 0.88.1 Android toolchain: minSdk 24, targetSdk 36, compileSdk 37, buildTools 37.0.0, NDK 27.1.12297006, AGP 9.2.1, Kotlin 2.2.0.
+- **[VERIFIED]** Vega's licence after commit `9ccc0c8` is PolyForm Noncommercial and names ads as commercial use. Nova copies nothing from Vega.
 
-### Planned, not installed
-| Package | Version checked | Note |
-|---|---|---|
-| react-native-google-mobile-ads | 17.4.0 (Apache-2.0) | Peers: `expo >=47`, `react-native >=0.86`. Inspected from a downloaded tarball only. |
-| Local Expo module for persistable URI access | n/a | See risk R2. |
+## 4. Issues found and fixed during Phase 1
 
-## 4. Risks (ranked)
+| Problem                                                                                    | Cause                                                 | Fix                                                                             |
+| ------------------------------------------------------------------------------------------ | ----------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `babel-preset-expo`, `expo-font`, `expo-asset` could not be resolved from the project root | npm nested them under `expo/node_modules`             | Installed each at the root, pinned to the SDK version. Found by Jest.           |
+| `tsc` error: `baseUrl` deprecated                                                          | TypeScript 6                                          | Removed it; `paths` works without it                                            |
+| `tsc` error on `import './global.css'`                                                     | TypeScript 6 checks side-effect imports               | `declare module '*.css'` in `nativewind-env.d.ts`                               |
+| `tsc` error: `describe` / `it` / `expect` not found                                        | TypeScript 6 no longer loads `@types/*` automatically | `"types": ["jest"]` in `tsconfig.json`                                          |
+| All 19 icon fonts bundled (36 assets)                                                      | Imported icons from the package root                  | Import `@expo/vector-icons/Ionicons` directly: 18 assets, bundle 3.6 → 3.3 MB   |
+| Contrast comment in the design tokens was wrong (said 5.6:1)                               | Written from memory                                   | Replaced with computed values (5.1:1)                                           |
+| A release build would have shown empty screens with no way to load sample data             | Sample data was tied to `__DEV__`                     | One flag, `SAMPLE_DATA_ENABLED` (`__DEV__` or `EXPO_PUBLIC_NOVA_SAMPLE_DATA=1`) |
+| Overlay and legacy-storage permissions in the shipping manifest                            | Expo defaults                                         | `blockedPermissions` in `app.json`; verified by re-running prebuild             |
+| `userInterfaceStyle: "dark"` ignored on Android                                            | Needs `expo-system-ui`                                | Installed `expo-system-ui` ~58.0.7                                              |
+| `act()` warnings in a test                                                                 | Store updated outside React's `act`                   | Wrapped the call                                                                |
 
-| # | Risk | Likelihood / impact | Mitigation |
-|---|---|---|---|
-| R1 | **No local Android build.** Every native change needs a CI round trip, which slows the loop. | Certain / Medium | Keep native surface small; cache Gradle in CI; verify JS locally with `expo export`. |
-| R2 | **Local-file URIs may not survive an app restart.** `expo-document-picker` uses `ACTION_OPEN_DOCUMENT` and copies to cache by default; its source contains **no** `takePersistableUriPermission` call [VERIFIED]. Android only keeps such grants across restarts if they are persisted [ASSUMPTION]. | High / High (breaks "library persistence") | Spike a small local Expo module that persists the grant. Device test required. |
-| R3 | **NativeWind 4 + Reanimated 4 + RN 0.88 compatibility is untested.** NativeWind's declared peer is only `tailwindcss >3.3.0` [VERIFIED]; real-world compatibility is unknown. | Medium / Medium | First CI build and `expo export` act as the check. Fallback: a typed `StyleSheet` theme. |
-| R4 | **MMKV 4 is Nitro-based**; whether it needs the New Architecture, and whether RN 0.88 makes that moot, was not verified. | Medium / High | Confirm at first build; do not enable or disable architecture flags blindly. |
-| R5 | **`react-native-video` Android picture-in-picture, fullscreen and subtitle behaviour is unverified on device.** The `fullscreen*` props are marked iOS in the types, but Android has `presentFullscreenPlayer()`/`dismissFullscreenPlayer()` ref methods [VERIFIED in source]. | Medium / Medium | Try the library's fullscreen methods first; fall back to Nova's own landscape mode via `expo-screen-orientation`. Treat PiP as best-effort until device-tested. |
-| R6 | **Cleartext `http://` URLs** are blocked by default on modern Android [ASSUMPTION]. | High / Low | Decide policy (see open questions); show a clear error either way. |
-| R7 | **AdMob account, Google Play listing and consent configuration** need accounts the user must create. | Certain / Medium | Test ad units only until the user supplies real IDs. No account creation without approval. |
-| R8 | **Expo/Google service blocks** make `expo install`, `expo-doctor` and EAS unusable here. | Certain / Low | Use `bundledNativeModules.json`; build on GitHub Actions. |
-| R9 | **Vega licence** forbids reuse in an ad-supported app. | Certain / Low (already handled) | Clean-room implementation; no code or asset copying. |
+## 5. Dependencies
 
-## 5. Open questions for the owner
-1. **Android application ID.** Proposed placeholder: `com.therookieofficial.nova`. Changing it later breaks upgrade-in-place, so please confirm or replace it before the first release.
-2. **Is GitHub Actions enabled on the Nova repo?** The workflow will be modelled on your working `study-planner1` pipeline, but I have not confirmed that it runs for Nova.
-3. **Cleartext `http://` video URLs:** allow, or HTTPS only? (Default proposal: HTTPS only with a clear error message.)
-4. **Merge policy:** keep working on `milestone-1-scaffold` and open a pull request, or merge each milestone straight to `main`? (Default proposal: pull request.)
+Runtime: `expo ~58.0.23`, `react-native 0.88.1`, `react 19.3.0`, `react-native-video ^6.19.3`, `react-native-mmkv ^4.3.2`, `react-native-nitro-modules ^0.37.2`, `zustand ^5.0.16`, `nativewind ^4.2.7`, `react-native-reanimated ^4.7.1`, `react-native-worklets ^0.13.0`, `react-native-safe-area-context ~5.11.1`, `react-native-screens ~4.30.1`, `@react-navigation/{native,native-stack,bottom-tabs} ^7`, `@expo/vector-icons ^15.1.1`, `expo-font`, `expo-asset`, `expo-system-ui`, `expo-status-bar`, `expo-dev-client`, `expo-build-properties`, `expo-document-picker`, `expo-keep-awake`, `expo-screen-orientation`.
 
-## 6. Exact next implementation step
+Dev: `typescript ~6.0.3`, `tailwindcss ^3.4.19`, `babel-preset-expo`, `jest ^29`, `jest-expo`, `@testing-library/react-native ^14`, `@types/jest`, `eslint ^9`, `eslint-config-expo`, `prettier`.
 
-**Milestone 1, step 1: configuration and a bundling check (no features).**
-1. In `app.json`: set name `Nova`, slug `nova`, `userInterfaceStyle: "dark"`, Android package from open question 1, and register the plugins `expo-dev-client`, `expo-build-properties` and `react-native-video` with **all four** `androidExtensions` keys written out (HLS true, DASH true, SmoothStreaming true, RTSP false) plus `enableAndroidPictureInPicture: true`. All four keys are needed because the plugin sets any omitted key to `false` [VERIFIED in its source].
-2. Add the NativeWind wiring (`babel.config.js`, `metro.config.js`, `tailwind.config.js`, `global.css`, type declarations).
-3. Replace the template `App.tsx` with a minimal dark screen that proves styling works.
-4. Run `npx tsc --noEmit` and `npx expo export --platform android` (Metro bundling needs no Android SDK). Record the results here, including failures.
+Installed but **not yet used by any screen**: `react-native-video`, `expo-document-picker`, `expo-keep-awake`, `expo-screen-orientation`, `expo-build-properties`. They are there so the native build includes them from the start; each is first used in the phase named in `docs/IMPLEMENTATION_PLAN.md`.
 
-Only after that passes does the folder skeleton and navigation shell begin. Full milestone list: `docs/IMPLEMENTATION_PLAN.md`.
+Planned, not installed: `react-native-google-mobile-ads` 17.4.0 (Milestone 6); a local Kotlin module for persistable file access (Milestone 3).
+
+## 6. Risks
+
+| #   | Risk                                                                                                                                                               | State after Phase 1                                                                                  |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| R1  | No local Android build, so each native change needs a CI round trip                                                                                                | Unchanged. `build-apk.yml` exists but has never run.                                                 |
+| R2  | Picked local-video URIs may not survive an app restart (`expo-document-picker` never takes a persistable permission [VERIFIED])                                    | Unchanged; addressed in Milestone 3                                                                  |
+| R3  | NativeWind 4 + Reanimated 4 + RN 0.88                                                                                                                              | **Reduced:** bundles and renders in tests. Runtime look is unverified.                               |
+| R4  | MMKV 4 (Nitro) and the New Architecture                                                                                                                            | **Reduced:** generated project has `newArchEnabled=true` [VERIFIED]. Native MMKV has not run.        |
+| R5  | `react-native-video` PiP, fullscreen and subtitles on Android                                                                                                      | Unchanged; the PiP manifest flag is confirmed, behaviour is not. Not used until Milestone 3/8.       |
+| R6  | Cleartext `http://` blocked in release builds                                                                                                                      | Manifest confirmed [VERIFIED]; the runtime effect is still [ASSUMPTION]. Policy decision still open. |
+| R7  | AdMob and Play accounts                                                                                                                                            | Unchanged                                                                                            |
+| R8  | Expo and Google services blocked in the sandbox                                                                                                                    | Unchanged. `expo prebuild` and `expo export` work offline.                                           |
+| R9  | Vega licence                                                                                                                                                       | Handled                                                                                              |
+| R10 | **CI workflows are untested.** The runner may need to download compileSdk 37 / build-tools 37 / NDK 27.1; Gradle 9.4.1 with AGP 9.2.1 has not been exercised by me | New. First run will tell.                                                                            |
+| R11 | App icon and splash are still the Expo template images                                                                                                             | New. Replace before any release.                                                                     |
+| R12 | Permissions: `READ_EXTERNAL_STORAGE` and `VIBRATE` still ship; Google Play reviews storage permissions                                                             | New. Audit in Milestone 9.                                                                           |
+
+## 7. Decisions made without an owner answer
+
+The four open questions from Milestone 0 are still unanswered, so I applied the stated defaults. Tell me if any is wrong.
+
+1. **Application ID** `com.therookieofficial.nova` (placeholder). Changing it after release breaks upgrades.
+2. **Cleartext `http://`**: not allowed (manifest default). No URL entry exists yet, so nothing depends on this.
+3. **Merge policy**: work stays on `milestone-1-scaffold`; merging to `main` is your call.
+4. **GitHub Actions** is assumed enabled on the repo. Not confirmed.
+
+## 8. Exact next step
+
+Phase 1 is not "stable" until it has launched on a real Android device. Nothing later should start before that.
+
+1. Check the **CI** run for the latest push on `milestone-1-scaffold` (type-check, lint, format, tests, Metro bundle on a Linux runner). That is the first independent confirmation of the sandbox results.
+2. Merge the branch into `main` (GitHub only lets "Run workflow" start a manual workflow once the file is on the default branch), then run **Build APK** with "Include invented sample data" ticked and "publish release" left off.
+3. Download `Nova-preview.apk` from that run's artifacts, install it, and report: does it open, do the five tabs switch, do cards open Details and Player, does Settings → Support Nova open, does the watchlist survive closing and reopening the app.
+4. Fix whatever step 1 or step 3 turns up. Only then start Milestone 2 follow-ups (progress/history repositories) and Milestone 3.

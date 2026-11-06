@@ -1,0 +1,75 @@
+name: Build APK
+
+# Manual only. Builds an installable release-variant APK (JavaScript bundled in, so it runs
+# on a phone without a dev server). It is signed with the debug key that Expo's generated
+# Android project uses, so it is for testing, NOT for the Play Store.
+on:
+  workflow_dispatch:
+    inputs:
+      sample_data:
+        description: 'Include invented sample data (for checking the screens on a phone)'
+        type: boolean
+        default: true
+      publish_release:
+        description: 'Also publish this APK as a GitHub pre-release (needs your approval to use)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CI: '1'
+      EXPO_PUBLIC_NOVA_SAMPLE_DATA: ${{ inputs.sample_data && '1' || '0' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Checks before building
+        run: |
+          npm run typecheck
+          npm run lint
+          npm test
+
+      - name: Generate the native Android project
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Accept Android SDK licences
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Name the APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk Nova-preview.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nova-apk
+          path: Nova-preview.apk
+          if-no-files-found: error
+
+      - name: Publish pre-release (only when asked)
+        if: ${{ inputs.publish_release }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "nova-preview-${{ github.run_number }}" Nova-preview.apk \
+            --prerelease \
+            --title "Nova preview ${{ github.run_number }}" \
+            --notes "Preview build for testing. Not a store release."
