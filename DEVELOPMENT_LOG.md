@@ -73,7 +73,9 @@ Newest entries at the bottom. Each entry states what was done and what was actua
 
 **Verified** (2026-11-06, after the last code change): `tsc --noEmit` exit 0; `eslint .` exit 0; `prettier --check .` exit 0; `jest` 4 suites / 36 tests passed with no warnings; `expo export --platform android` bundled 1,347 modules to a 3.3 MB Hermes bundle; `expo prebuild` generated the Android project and I read its Gradle properties, manifest and signing config.
 
-**Not verified:** any Gradle or APK build; launch on an emulator or phone; how the screens look; native MMKV (tests use an in-memory stand-in); CI runs.
+**CI:** pushed as commit `290ee00`; GitHub Actions run 42209392549 (`ci.yml`) succeeded on every step (`npm ci`, type-check, lint, formatting, tests, Metro bundle). I then tried to start `build-apk.yml` from the branch and GitHub refused (HTTP 404: a manual workflow must be on the default branch). It has not run, and I did not merge to `main`.
+
+**Not verified:** any Gradle or APK build; launch on an emulator or phone; how the screens look; native MMKV (tests use an in-memory stand-in).
 
 **Decisions taken without an owner answer:** keep the placeholder application ID; no cleartext HTTP; no merge to `main`.
 

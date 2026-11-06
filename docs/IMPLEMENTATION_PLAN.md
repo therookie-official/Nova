@@ -114,7 +114,7 @@ R1 slow CI loop · R2 URI persistence · R3 NativeWind compatibility · R4 MMKV/
 
 ## Progress (2026-11-06)
 
-**Milestone 1: implemented, awaiting device confirmation.** Steps 1 to 5 are done in code. The L-tier exit criteria passed (type-check, lint, format, 36 tests, Metro bundle, and a successful `expo prebuild` whose output was inspected). The C-tier criterion (the APK workflow completes) and the D-tier criterion (the app launches on a phone) have **not** been met: neither has been attempted. Milestone 2 must not start until both are.
+**Milestone 1: implemented, awaiting device confirmation.** Steps 1 to 5 are done in code. The L-tier exit criteria passed (type-check, lint, format, 36 tests, Metro bundle, and a successful `expo prebuild` whose output was inspected). `ci.yml` has also passed on a GitHub runner (commit `290ee00`). The C-tier criterion (the APK workflow completes; it cannot be started until the workflow is on `main`) and the D-tier criterion (the app launches on a phone) have **not** been met: neither has been attempted. Milestone 2 must not start until both are.
 
 Parts of Milestone 2 were pulled forward because Phase 1 needed them: the repositories for library, remote sources, watchlist, progress and settings, and their stores and tests. Still to do in Milestone 2: playback history, and the device check that data survives a force-stop.
 
