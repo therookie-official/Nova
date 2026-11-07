@@ -120,3 +120,5 @@ Newest entries at the bottom. Each entry states what was done and what was actua
 **Not verified:** everything on a physical device. The request asked for physical-hardware testing; the sandbox has no device, so that step is **not done**. A device checklist is in `PROJECT_STATUS.md` §00. Gradle build of the Kotlin module also never ran.
 
 **Not done on purpose:** Google Cast, DLNA, subtitle styling, resolution selection, background audio.
+
+**Correction (found while committing Phase 3):** `.gitignore` had `android/`, which also matched the native module's own folder `modules/nova-saf/android/`. The Kotlin module and its Gradle/manifest files were therefore **never committed** in Phase 2 (only `package.json`, `expo-module.config.json` and `src/index.ts` were). The rule is now `/android/` (root only) and the module files are committed. Until this commit, a fresh clone or CI build would have had no native code for `nova-saf`; the Phase 2 note saying the module was part of the push was wrong. The module has still never been compiled.
