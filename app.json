@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Nova",
+    "slug": "nova",
+    "version": "0.1.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0B0D12",
+    "platforms": ["android"],
+    "android": {
+      "package": "com.therookieofficial.nova",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0D12",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "plugins": [
+      "expo-dev-client",
+      [
+        "react-native-video",
+        {
+          "enableAndroidPictureInPicture": true,
+          "androidExtensions": {
+            "useExoplayerHls": true,
+            "useExoplayerDash": true,
+            "useExoplayerSmoothStreaming": true,
+            "useExoplayerRtsp": false
+          }
+        }
+      ]
+    ]
+  }
+}
