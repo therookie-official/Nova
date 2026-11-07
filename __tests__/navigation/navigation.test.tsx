@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react-n
 import { AppRoot } from '@/AppRoot';
 import { clearPlaceholderData } from '@/services/dev/placeholders';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useWatchlistStore } from '@/store/watchlistStore';
 
 async function openTab(name: string) {
@@ -56,6 +57,16 @@ describe('app navigation', () => {
 
     await fireEvent.press(screen.getByTestId('player-back'));
     expect(await screen.findByTestId('screen-details')).toBeTruthy();
+  });
+
+  it('turns picture-in-picture on leave on and off in Settings', async () => {
+    await render(<AppRoot />);
+    await openTab('Settings');
+    const toggle = await screen.findByTestId('setting-pip');
+    await fireEvent(toggle, 'valueChange', true);
+    expect(useSettingsStore.getState().autoPip).toBe(true);
+    await fireEvent(toggle, 'valueChange', false);
+    expect(useSettingsStore.getState().autoPip).toBe(false);
   });
 
   it('opens Support Nova from Settings', async () => {

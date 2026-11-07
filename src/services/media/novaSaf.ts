@@ -26,6 +26,16 @@ export const safAccess = {
     }
   },
 
+  /** Undefined when it cannot be checked (no native module). */
+  async isPictureInPictureSupported(): Promise<boolean | undefined> {
+    if (!NovaSaf) return undefined;
+    try {
+      return await NovaSaf.isPictureInPictureSupported();
+    } catch {
+      return undefined;
+    }
+  },
+
   async release(uri: string): Promise<void> {
     if (!NovaSaf) return;
     try {

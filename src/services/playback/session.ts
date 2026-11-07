@@ -1,4 +1,6 @@
-import type { MediaItem, PlaybackProgress } from '@/types/media';
+import type { ExternalSubtitle, MediaItem, PlaybackProgress } from '@/types/media';
+import { REMOTE_BUFFER, REMOTE_MIN_LOAD_RETRY_COUNT } from './recovery';
+import { SUBTITLE_MIME } from './tracks';
 
 /** Positions before this are treated as "not really started": no resume prompt. */
 export const RESUME_MIN_MS = 5_000;
@@ -47,6 +49,9 @@ export interface PlayerSource {
   uri: string;
   /** Forces the stream type when the address does not reveal it ("m3u8", "mpd"). */
   type?: string;
+  textTracks?: { title: string; language: string; type: string; uri: string }[];
+  bufferConfig?: typeof REMOTE_BUFFER;
+  minLoadRetryCount?: number;
 }
 
 /** What to hand the player. Depends only on the source, never on display metadata. */
@@ -63,4 +68,34 @@ export function titleFromFileName(fileName: string | undefined): string {
   const withoutExtension = (fileName ?? '').replace(/\.[A-Za-z0-9]{1,5}$/, '');
   const spaced = withoutExtension.replace(/[._]+/g, ' ').replace(/\s+/g, ' ').trim();
   return spaced || 'Untitled video';
+}
+
+/**
+ * The full source given to the player: the basic source plus the user's subtitle files and, for
+ * online videos only, buffering and retry settings. Local files need neither.
+ */
+export function buildVideoSource(
+  item: Pick<MediaItem, 'source'>,
+  subtitles: ExternalSubtitle[] = [],
+): PlayerSource {
+  const base = buildPlayerSource(item);
+  const withTracks: PlayerSource =
+    subtitles.length > 0
+      ? {
+          ...base,
+          textTracks: subtitles.map((subtitle) => ({
+            title: subtitle.title,
+            // "und" = language not specified. The user did not say which language the file is.
+            language: 'und',
+            type: SUBTITLE_MIME[subtitle.format],
+            uri: subtitle.uri,
+          })),
+        }
+      : base;
+  if (item.source.kind !== 'remote') return withTracks;
+  return {
+    ...withTracks,
+    bufferConfig: REMOTE_BUFFER,
+    minLoadRetryCount: REMOTE_MIN_LOAD_RETRY_COUNT,
+  };
 }

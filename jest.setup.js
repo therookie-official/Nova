@@ -27,9 +27,11 @@ jest.mock('react-native-video', () => require('./test/videoMock'));
 jest.mock('expo-keep-awake', () => ({ useKeepAwake: () => {} }));
 
 jest.mock('expo-screen-orientation', () => ({
-  OrientationLock: { LANDSCAPE: 'LANDSCAPE' },
+  OrientationLock: { LANDSCAPE: 'LANDSCAPE', PORTRAIT_UP: 'PORTRAIT_UP' },
   lockAsync: jest.fn(() => Promise.resolve()),
   unlockAsync: jest.fn(() => Promise.resolve()),
 }));
 
 jest.mock('expo-document-picker', () => ({ getDocumentAsync: jest.fn() }));
+
+jest.mock('expo-navigation-bar', () => ({ setVisibilityAsync: jest.fn(() => Promise.resolve()) }));

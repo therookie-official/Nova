@@ -1,5 +1,6 @@
 import type {
   HistoryEntry,
+  PlaybackPrefs,
   MediaItem,
   PlaybackProgress,
   RemoteSourceRecord,
@@ -21,6 +22,7 @@ const hasStringId = (item: unknown) => isRecord(item) && typeof item.id === 'str
 export const DEFAULT_SETTINGS: Settings = {
   resumeEnabled: true,
   defaultSpeed: 1,
+  autoPip: false,
   placeholdersSeeded: false,
 };
 
@@ -137,5 +139,18 @@ export const settingsRepository = createRepository<Settings>({
     typeof data.resumeEnabled === 'boolean' &&
     typeof data.defaultSpeed === 'number' &&
     typeof data.placeholdersSeeded === 'boolean',
+  storage: getStorage,
+});
+
+export const playbackPrefsRepository = createRepository<Record<string, PlaybackPrefs>>({
+  key: 'nova.playbackPrefs',
+  version: 1,
+  defaults: () => ({}),
+  validate: (data): data is Record<string, PlaybackPrefs> =>
+    isRecord(data) &&
+    Object.values(data).every(
+      (entry) =>
+        isRecord(entry) && typeof entry.itemId === 'string' && Array.isArray(entry.subtitles),
+    ),
   storage: getStorage,
 });

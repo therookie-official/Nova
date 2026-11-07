@@ -13,6 +13,7 @@ export function SettingsScreen() {
   const { openSupport } = useAppNavigation();
   const resumeEnabled = useSettingsStore((state) => state.resumeEnabled);
   const defaultSpeed = useSettingsStore((state) => state.defaultSpeed);
+  const autoPip = useSettingsStore((state) => state.autoPip === true);
   const update = useSettingsStore((state) => state.update);
 
   return (
@@ -32,6 +33,23 @@ export function SettingsScreen() {
               thumbColor="#FFFFFF"
               accessibilityLabel="Resume playback"
               testID="setting-resume"
+            />
+          </View>
+
+          <View className="mt-5 flex-row items-center justify-between gap-4">
+            <View className="flex-1">
+              <Text className="text-base font-semibold text-text">Picture-in-picture on leave</Text>
+              <Text className="text-sm text-textMuted">
+                Keep the video in a small window when you go to the home screen while it plays.
+              </Text>
+            </View>
+            <Switch
+              value={autoPip}
+              onValueChange={(value) => update({ autoPip: value })}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor="#FFFFFF"
+              accessibilityLabel="Picture-in-picture on leave"
+              testID="setting-pip"
             />
           </View>
 

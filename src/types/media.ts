@@ -67,9 +67,28 @@ export interface RemoteSourceRecord {
   isPlaceholder?: boolean;
 }
 
+/** A subtitle file the user added for one video. `uri` is a content:// URI. */
+export interface ExternalSubtitle {
+  uri: string;
+  title: string;
+  format: 'srt' | 'vtt' | 'ttml';
+  persisted: boolean;
+}
+
+/** Choices remembered for one video: tracks, added subtitle files and picture size. */
+export interface PlaybackPrefs {
+  itemId: string;
+  audio?: import('@/services/playback/tracks').TrackChoice;
+  text?: import('@/services/playback/tracks').TrackChoice;
+  subtitles: ExternalSubtitle[];
+  resizeMode?: 'contain' | 'cover' | 'stretch';
+}
+
 export interface Settings {
   resumeEnabled: boolean;
   defaultSpeed: number;
+  /** Enter picture-in-picture when the user leaves the app during playback. */
+  autoPip?: boolean;
   /** Set once sample data has been offered, so it is not re-added after being cleared. */
   placeholdersSeeded: boolean;
 }

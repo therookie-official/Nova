@@ -100,3 +100,23 @@ Newest entries at the bottom. Each entry states what was done and what was actua
 **Problems found along the way:** none of the old-model screens compiled after the model change (expected; all migrated); the navigation test leaked user-added items into a later test (fixed with cleanup); one lint error (missing display name in the video stand-in).
 
 **Decisions:** DASH off by default; http links rejected; poster is a typed https link for now; the Sources list records links in addition to library items.
+
+## 2026-11-07 — Phase 3: advanced player features
+
+**Done**
+
+- Checked `react-native-video` 6.19.3 sources for what Android supports (text/audio track selection, side-loaded subtitles, PiP, buffer config); recorded in `PROJECT_STATUS.md` §00.
+- Player: subtitle and audio sheets, external subtitle files (.srt/.vtt/.ttml, others refused with a message), speed list, picture size, PiP button and optional enter-on-leave setting, full-screen lock logic with hidden system bars, double-tap skip, safe-area aware controls.
+- Recovery: online videos get buffer tuning and 5 load retries; automatic reconnect up to 4 times from the same position; hint after 8 s of buffering. Local files and non-network errors never auto-retry.
+- Position: also saved when the app goes to the background.
+- Per-video preferences store (audio, subtitles, added subtitle files, picture size); settings saved by older versions now gain new fields from the defaults.
+- Native module `nova-saf` gained a PiP-support check (uncompiled). New dependency: `expo-navigation-bar`.
+- Tests: 118 -> 169 (12 suites).
+
+**Bug found by tests and fixed:** the player's unmount cleanup depended on a function that changes when the library item is edited, so it ran mid-playback (resetting orientation and bars, saving early). Now read through a ref.
+
+**Verified (sandbox):** tsc, eslint, prettier clean; jest 169/169; Android bundle exported; prebuild manifest has PiP and rotation `configChanges`; autolinking finds all native modules.
+
+**Not verified:** everything on a physical device. The request asked for physical-hardware testing; the sandbox has no device, so that step is **not done**. A device checklist is in `PROJECT_STATUS.md` §00. Gradle build of the Kotlin module also never ran.
+
+**Not done on purpose:** Google Cast, DLNA, subtitle styling, resolution selection, background audio.
