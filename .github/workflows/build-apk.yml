@@ -2,7 +2,8 @@ name: Build APK
 
 # Manual only. Builds an installable release-variant APK (JavaScript bundled in, so it runs
 # on a phone without a dev server). It is signed with the debug key that Expo's generated
-# Android project uses, so it is for testing, NOT for the Play Store.
+# Android project uses, so it is for PRIVATE testing only, NOT for distribution or the Play Store.
+# The build job is read-only; only the optional release job can write to the repository.
 on:
   workflow_dispatch:
     inputs:
@@ -20,7 +21,7 @@ on:
         default: false
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -69,12 +70,24 @@ jobs:
           path: Nova-preview.apk
           if-no-files-found: error
 
-      - name: Publish pre-release (only when asked)
-        if: ${{ inputs.publish_release }}
+  # Separate job so that only this step can write to the repository. The build job above is
+  # read-only. It runs only when "publish_release" is ticked, and it never checks out code.
+  release:
+    needs: build
+    if: ${{ inputs.publish_release }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: nova-apk
+      - name: Publish pre-release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "nova-preview-${{ github.run_number }}" Nova-preview.apk \
+            --repo "${{ github.repository }}" \
             --prerelease \
             --title "Nova preview ${{ github.run_number }}" \
-            --notes "Preview build for testing. Not a store release."
+            --notes "Private test build, signed with a debug key. Not for distribution and not a store release. Nothing in it has been tested on a device unless the project status says so."

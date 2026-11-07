@@ -122,3 +122,10 @@ Newest entries at the bottom. Each entry states what was done and what was actua
 **Not done on purpose:** Google Cast, DLNA, subtitle styling, resolution selection, background audio.
 
 **Correction (found while committing Phase 3):** `.gitignore` had `android/`, which also matched the native module's own folder `modules/nova-saf/android/`. The Kotlin module and its Gradle/manifest files were therefore **never committed** in Phase 2 (only `package.json`, `expo-module.config.json` and `src/index.ts` were). The rule is now `/android/` (root only) and the module files are committed. Until this commit, a fresh clone or CI build would have had no native code for `nova-saf`; the Phase 2 note saying the module was part of the push was wrong. The module has still never been compiled.
+
+## 2026-11-07 — Pre-merge fixes
+
+- `README.md` described Phase 1 ("cannot play video yet"); rewritten to match the code and to say plainly that nothing has been tested on a device.
+- `build-apk.yml`: workflow permission is now `contents: read`. Publishing a pre-release moved to a separate `release` job (runs only when "publish release" is ticked) that alone has `contents: write`. Notes and README now say the debug-signed APK is for private testing only, and that pre-releases are public because the repository is public.
+- Not changed: application ID `com.therookieofficial.nova` (owner decision recorded in the chat; still unconfirmed in writing here until the owner answers).
+- Not verified: the new two-job workflow has not run (it can only run from `main`); its YAML parses and the job/permission layout was read back.
