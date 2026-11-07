@@ -1,6 +1,6 @@
 # Project Nova — Status
 
-Last updated: 2026-11-06 · Branch: `milestone-1-scaffold` · Phase: **Phase 1 (project foundation) implemented; checks pass in the sandbox and in GitHub CI; never built into an APK and never run on a device**
+Last updated: 2026-11-07 · Branch: `milestone-1-scaffold` · Phase: **Phase 2 (core media functionality) implemented in code; sandbox checks pass; NOT built into an APK and NOT run on any device. No playback, format or persistence claim below has been tested on Android.**
 
 Legend used in every document:
 
@@ -8,7 +8,46 @@ Legend used in every document:
 - **[ASSUMPTION]** Believed true from general platform knowledge but not checked here.
 - **[UNVERIFIED]** Cannot be checked in this cloud environment (needs CI or a physical device).
 
-## 1. Where things stand
+## 0. Phase 2 — core media functionality (2026-11-07)
+
+### What was built
+
+| Area          | What exists in code                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unified model | `MediaItem = { source, metadata }`. `source` is `local` (content:// URI, file name, MIME, size, `persisted` flag) or `remote` (https URI + `progressive` / `hls` / `dash`). `metadata` holds title, description, year, categories, poster link, duration. Playback reads only `source`. Library storage moved to schema v2 with a tested v1 → v2 migration. Progress and a new watch-history store sit beside it. |
+| Local videos  | Android document picker (`expo-document-picker`, `video/*`, multiple, no copying). Only the URI and basic facts are stored. A small local native module (`modules/nova-saf`, Kotlin) asks Android to keep read access after restart. If Android refuses, the item is flagged `persisted: false` and the user is told it may need re-selecting; if access is later lost the player says so plainly.                |
+| Remote videos | Add Link screen: validation (https only, no embedded credentials, not obviously a web page/picture, `.m3u8` → HLS, `.mpd` → DASH only if the experimental flag is on), a server check (HEAD, ranged-GET fallback, timeout) that is advisory with "Save anyway", and saving to the library plus the Sources list.                                                                                                  |
+| Library       | Media cards, search (title/category), category chips, manual metadata editing (title, year, categories, description, poster link), watchlist, continue watching, recently watched (Home), remove from library (never deletes the file).                                                                                                                                                                           |
+| Player        | `react-native-video`: play/pause, touch seek bar, ±10 s, speed (0.5–2×), landscape "full screen" toggle, resume (setting-controlled), progress saved every ~5 s and on leaving, loading/buffering indicator, mapped playback errors with Try again, keep-screen-awake.                                                                                                                                            |
+| Errors        | Media3 error names mapped to plain messages: no connection, timeout, not found, refused/expired link, blocked http, unsupported format, decoder failure, lost local access, unknown.                                                                                                                                                                                                                              |
+
+### What was verified (sandbox, 2026-11-07, after the last code change)
+
+- `tsc --noEmit`, `eslint .`, `prettier --check .`: all clean.
+- `jest`: 10 suites, 118 tests passed. Covers URL validation and probe (mocked fetch), error mapping, resume/seek/persist logic, player-source building, v1 → v2 migration, history store, picker import (mocked picker), media actions, library filtering/categories/recently-watched, and the Player screen for **remote and local sources independently** (same suite run per source kind) plus UI flows for add-link, edit-metadata, category filter and navigation.
+- `expo export --platform android` bundled successfully with Hermes.
+- `expo prebuild` generated the Android project; `expo-modules-autolinking` lists `nova-saf` (`expo.modules.novasaf.NovaSafModule`) and the ExoPlayer HLS/DASH flags are `true` in the generated `gradle.properties`. The generated `android/` folder was deleted afterwards.
+
+### What is NOT verified — do not treat as working
+
+- **Any Gradle/APK build.** The Kotlin module has never been compiled.
+- **Playback of any format on a device**: progressive MP4/WebM/MKV, HLS and local content:// files are all **untested**. The Jest player tests use a stand-in for `react-native-video` and only prove Nova's own wiring (props passed, events handled, state saved); they say nothing about whether video plays.
+- **DASH**: the ExoPlayer module is compiled in but nothing was played. DASH links are rejected unless a build sets `EXPO_PUBLIC_NOVA_EXPERIMENTAL_DASH=1` (workflow input `experimental_dash`).
+- **Persistent access to picked files across restarts.** `expo-document-picker` may not request a _persistable_ grant, in which case Android refuses and the item falls back to `persisted: false` (re-select after restart). Which happens on a real phone is unknown.
+- **Error-name mapping** was written from the library's source and Media3 naming, not from errors observed on a device.
+- Full-screen is a landscape lock plus hidden status bar; a true immersive (hidden navigation bar) mode is not implemented.
+- The server check can be wrong in both directions (some servers refuse HEAD but play fine; some answer 200 for a non-video).
+- Sample entries still point at `example.com` and cannot play.
+
+### Not done in this phase (by design or deferred)
+
+Subtitles, audio-track selection, picture-in-picture UI, casting, TMDB metadata, ads, payments, poster picking from the device (poster is a typed https link), re-link flow that lets the user re-select a lost local file directly from the error screen, authorized/header-based remote URLs beyond what is in the URL itself.
+
+### Next step for Phase 2 to count as done
+
+Build an APK (merge to `main` first so **Build APK** can be run, tick `experimental_dash` only if you want to test DASH) and test on a phone, one source type at a time: (1) pick a local MP4, play, seek, change speed, resume, close and reopen the app and play again; (2) add an https MP4 link; (3) add an https HLS link; (4) try a dead link, an http link, and a web-page link and read the messages; (5) optionally a DASH link. Report what happens and I will fix what fails and then update this document with the device results.
+
+## 1. Where things stand (Phase 1 section, written 2026-11-06; still accurate for what it covers)
 
 | Item                                                                                                   | State                                                                                              |
 | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |

@@ -3,14 +3,21 @@ import { FlatList, View } from 'react-native';
 import { EmptyState, MediaCard, Screen, SectionHeader, Button, Card } from '@/components/ui';
 import { useAppNavigation } from '@/hooks/useAppNavigation';
 import { loadPlaceholderData } from '@/services/dev/placeholders';
+import { useHistoryStore } from '@/store/historyStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useProgressStore } from '@/store/progressStore';
-import { progressFraction, selectContinueWatching, sortRecentlyAdded } from '@/utils/library';
+import {
+  progressFraction,
+  selectContinueWatching,
+  selectRecentlyWatched,
+  sortRecentlyAdded,
+} from '@/utils/library';
 
 export function HomeScreen() {
   const { openDetails, openTab } = useAppNavigation();
   const items = useLibraryStore((state) => state.items);
   const progressByItem = useProgressStore((state) => state.byItem);
+  const history = useHistoryStore((state) => state.entries);
 
   if (items.length === 0) {
     return (
@@ -19,8 +26,8 @@ export function HomeScreen() {
           title="Your library is empty"
           message="Videos you add from your device or from a link will appear here."
           icon="film-outline"
-          actionLabel={SAMPLE_DATA_ENABLED ? 'Load sample data' : undefined}
-          onAction={SAMPLE_DATA_ENABLED ? loadPlaceholderData : undefined}
+          actionLabel={SAMPLE_DATA_ENABLED ? 'Load sample data' : 'Add your first video'}
+          onAction={SAMPLE_DATA_ENABLED ? loadPlaceholderData : () => openTab('Library')}
         />
       </Screen>
     );
@@ -28,6 +35,7 @@ export function HomeScreen() {
 
   const continueWatching = selectContinueWatching(items, progressByItem);
   const recent = sortRecentlyAdded(items).slice(0, 10);
+  const recentlyWatched = selectRecentlyWatched(items, history);
 
   return (
     <Screen title="Nova" subtitle="Your personal movie library" scroll testID="screen-home">
@@ -47,6 +55,24 @@ export function HomeScreen() {
                   progress={progressFraction(entry.progress)}
                   onPress={(selected) => openDetails(selected.id)}
                 />
+              </View>
+            )}
+          />
+        </View>
+      ) : null}
+
+      {recentlyWatched.length > 0 ? (
+        <View testID="recently-watched">
+          <SectionHeader title="Recently watched" />
+          <FlatList
+            horizontal
+            data={recentlyWatched}
+            keyExtractor={(item) => item.id}
+            showsHorizontalScrollIndicator={false}
+            ItemSeparatorComponent={() => <View className="w-3" />}
+            renderItem={({ item }) => (
+              <View style={{ width: 140 }}>
+                <MediaCard item={item} onPress={(selected) => openDetails(selected.id)} />
               </View>
             )}
           />

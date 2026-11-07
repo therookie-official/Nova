@@ -1,4 +1,4 @@
-import type { LibraryItem, PlaybackProgress, RemoteSourceRecord } from '@/types/media';
+import type { HistoryEntry, MediaItem, PlaybackProgress, RemoteSourceRecord } from '@/types/media';
 
 /**
  * Development sample data. Titles are invented, and the URLs use the reserved
@@ -7,83 +7,95 @@ import type { LibraryItem, PlaybackProgress, RemoteSourceRecord } from '@/types/
  */
 const T0 = 1_760_000_000_000; // fixed timestamp keeps the data deterministic
 
-const remote = (slug: string): LibraryItem['source'] => ({
+const remote = (slug: string): MediaItem['source'] => ({
   kind: 'remote',
-  url: `https://example.com/samples/${slug}.mp4`,
+  uri: `https://example.com/samples/${slug}.mp4`,
   format: 'progressive',
 });
 
-export const PLACEHOLDER_LIBRARY: LibraryItem[] = [
+export const PLACEHOLDER_LIBRARY: MediaItem[] = [
   {
     id: 'sample-glass-harbor',
-    title: 'The Glass Harbor',
-    year: 2021,
-    genres: ['Drama', 'Mystery'],
-    description: 'A sample entry. A harbour town keeps a secret that the tide keeps returning.',
-    durationMin: 112,
     source: remote('glass-harbor'),
+    metadata: {
+      title: 'The Glass Harbor',
+      year: 2021,
+      genres: ['Drama', 'Mystery'],
+      description: 'A sample entry. A harbour town keeps a secret that the tide keeps returning.',
+      durationMs: 112 * 60_000,
+      origin: 'manual',
+    },
     addedAt: T0 + 6,
-    metadata: 'manual',
     isPlaceholder: true,
   },
   {
     id: 'sample-night-orchard',
-    title: 'Night Orchard',
-    year: 2019,
-    genres: ['Thriller'],
-    description: 'A sample entry. Three friends, one orchard, and a long night.',
-    durationMin: 98,
     source: remote('night-orchard'),
+    metadata: {
+      title: 'Night Orchard',
+      year: 2019,
+      genres: ['Thriller'],
+      description: 'A sample entry. Three friends, one orchard, and a long night.',
+      durationMs: 98 * 60_000,
+      origin: 'manual',
+    },
     addedAt: T0 + 5,
-    metadata: 'manual',
     isPlaceholder: true,
   },
   {
     id: 'sample-paper-kites',
-    title: 'Paper Kites over Delhi',
-    year: 2023,
-    genres: ['Family', 'Comedy'],
-    description: 'A sample entry. A school holiday, a rooftop, and one very stubborn kite.',
-    durationMin: 104,
     source: remote('paper-kites'),
+    metadata: {
+      title: 'Paper Kites over Delhi',
+      year: 2023,
+      genres: ['Family', 'Comedy'],
+      description: 'A sample entry. A school holiday, a rooftop, and one very stubborn kite.',
+      durationMs: 104 * 60_000,
+      origin: 'manual',
+    },
     addedAt: T0 + 4,
-    metadata: 'manual',
     isPlaceholder: true,
   },
   {
     id: 'sample-low-orbit',
-    title: 'Low Orbit',
-    year: 2024,
-    genres: ['Sci-Fi'],
-    description: 'A sample entry. A repair crew discovers the station has been listening.',
-    durationMin: 126,
     source: remote('low-orbit'),
+    metadata: {
+      title: 'Low Orbit',
+      year: 2024,
+      genres: ['Sci-Fi'],
+      description: 'A sample entry. A repair crew discovers the station has been listening.',
+      durationMs: 126 * 60_000,
+      origin: 'manual',
+    },
     addedAt: T0 + 3,
-    metadata: 'manual',
     isPlaceholder: true,
   },
   {
     id: 'sample-monsoon-letters',
-    title: 'Monsoon Letters',
-    year: 2018,
-    genres: ['Romance', 'Drama'],
-    description: 'A sample entry. Two pen friends finally agree on a place to meet.',
-    durationMin: 118,
     source: remote('monsoon-letters'),
+    metadata: {
+      title: 'Monsoon Letters',
+      year: 2018,
+      genres: ['Romance', 'Drama'],
+      description: 'A sample entry. Two pen friends finally agree on a place to meet.',
+      durationMs: 118 * 60_000,
+      origin: 'manual',
+    },
     addedAt: T0 + 2,
-    metadata: 'manual',
     isPlaceholder: true,
   },
   {
     id: 'sample-iron-lantern',
-    title: 'The Iron Lantern',
-    year: 2022,
-    genres: ['Adventure', 'Fantasy'],
-    description: 'A sample entry. A lighthouse keeper inherits a lamp that shows other coasts.',
-    durationMin: 134,
     source: remote('iron-lantern'),
+    metadata: {
+      title: 'The Iron Lantern',
+      year: 2022,
+      genres: ['Adventure', 'Fantasy'],
+      description: 'A sample entry. A lighthouse keeper inherits a lamp that shows other coasts.',
+      durationMs: 134 * 60_000,
+      origin: 'manual',
+    },
     addedAt: T0 + 1,
-    metadata: 'manual',
     isPlaceholder: true,
   },
 ];
@@ -111,3 +123,8 @@ export const PLACEHOLDER_REMOTE_SOURCES: RemoteSourceRecord[] = [
 ];
 
 export const PLACEHOLDER_WATCHLIST_IDS = ['sample-night-orchard', 'sample-iron-lantern'];
+
+export const PLACEHOLDER_HISTORY: HistoryEntry[] = [
+  { itemId: 'sample-low-orbit', watchedAt: T0 + 20, positionMs: 2_700_000, durationMs: 7_560_000 },
+  { itemId: 'sample-glass-harbor', watchedAt: T0 + 10, positionMs: 900_000, durationMs: 6_720_000 },
+];

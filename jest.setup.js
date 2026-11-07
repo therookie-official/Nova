@@ -21,3 +21,15 @@ jest.mock(
   'react-native-safe-area-context',
   () => require('react-native-safe-area-context/jest/mock').default,
 );
+
+jest.mock('react-native-video', () => require('./test/videoMock'));
+
+jest.mock('expo-keep-awake', () => ({ useKeepAwake: () => {} }));
+
+jest.mock('expo-screen-orientation', () => ({
+  OrientationLock: { LANDSCAPE: 'LANDSCAPE' },
+  lockAsync: jest.fn(() => Promise.resolve()),
+  unlockAsync: jest.fn(() => Promise.resolve()),
+}));
+
+jest.mock('expo-document-picker', () => ({ getDocumentAsync: jest.fn() }));

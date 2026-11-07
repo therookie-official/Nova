@@ -80,3 +80,23 @@ Newest entries at the bottom. Each entry states what was done and what was actua
 **Decisions taken without an owner answer:** keep the placeholder application ID; no cleartext HTTP; no merge to `main`.
 
 **Not done on purpose:** playback, adding videos or links, ads, consent, payments, subtitles, PiP, casting.
+
+## 2026-11-07 — Phase 2: core media functionality
+
+**Done**
+
+- Replaced the flat library record with a unified `MediaItem` (`source` + `metadata`) for local and remote videos; library schema bumped to v2 with a migration from v1; added a watch-history store.
+- Local import through the Android document picker (no copy), plus a local Expo module `nova-saf` that tries to keep read access to the picked URI. It degrades to `persisted: false` instead of failing.
+- Add Link screen with URL validation, an advisory server check and "Save anyway"; DASH links rejected unless the experimental flag is on.
+- Real Player screen (play/pause, seek bar, ±10 s, speed, landscape toggle, resume, progress saving, buffering indicator, mapped error messages with retry).
+- Library: add from device, search, category chips, metadata editing, remove; Home: recently watched; Details: resume button, source label, edit, remove.
+- Tests grew from 36 to 118 (10 suites). Player tests run once per source kind (local, remote) with a stand-in for the video component.
+- `build-apk.yml`: new `experimental_dash` input.
+
+**Verified (sandbox):** tsc, eslint, prettier clean; jest 118/118; `expo export --platform android` succeeded; `expo prebuild` generated the project and autolinking discovered `nova-saf`; ExoPlayer HLS/DASH flags present in generated Gradle properties.
+
+**Not verified:** Gradle build of the Kotlin module; any playback on Android (progressive, HLS, DASH, local content://); persistence of picked-file access across restarts; error-name mapping against real errors. See `PROJECT_STATUS.md` §0 for the exact list and the device test steps.
+
+**Problems found along the way:** none of the old-model screens compiled after the model change (expected; all migrated); the navigation test leaked user-added items into a later test (fixed with cleanup); one lint error (missing display name in the video stand-in).
+
+**Decisions:** DASH off by default; http links rejected; poster is a typed https link for now; the Sources list records links in addition to library items.

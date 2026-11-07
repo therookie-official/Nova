@@ -1,4 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { AddRemoteScreen } from '@/screens/AddRemoteScreen';
+import { EditMetadataScreen } from '@/screens/EditMetadataScreen';
 import { MovieDetailsScreen } from '@/screens/MovieDetailsScreen';
 import { PlayerScreen } from '@/screens/PlayerScreen';
 import { SupportNovaScreen } from '@/screens/SupportNovaScreen';
@@ -23,6 +25,12 @@ export function RootNavigator() {
         name="MovieDetails"
         component={MovieDetailsScreen}
         options={{ title: 'Details' }}
+      />
+      <Stack.Screen name="AddRemote" component={AddRemoteScreen} options={{ title: 'Add link' }} />
+      <Stack.Screen
+        name="EditMetadata"
+        component={EditMetadataScreen}
+        options={{ title: 'Edit details' }}
       />
       <Stack.Screen name="Player" component={PlayerScreen} options={{ headerShown: false }} />
       <Stack.Screen

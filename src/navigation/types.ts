@@ -12,6 +12,8 @@ export type RootStackParamList = {
   Tabs: NavigatorScreenParams<TabParamList> | undefined;
   MovieDetails: { itemId: string };
   Player: { itemId: string };
+  AddRemote: undefined;
+  EditMetadata: { itemId: string };
   SupportNova: undefined;
 };
 

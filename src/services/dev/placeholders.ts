@@ -1,9 +1,11 @@
 import {
+  PLACEHOLDER_HISTORY,
   PLACEHOLDER_LIBRARY,
   PLACEHOLDER_PROGRESS,
   PLACEHOLDER_REMOTE_SOURCES,
   PLACEHOLDER_WATCHLIST_IDS,
 } from '@/config/placeholderData';
+import { useHistoryStore } from '@/store/historyStore';
 import { useLibraryStore, useRemoteSourcesStore } from '@/store/libraryStore';
 import { useProgressStore } from '@/store/progressStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -19,6 +21,9 @@ export function loadPlaceholderData(): void {
 
   const progress = useProgressStore.getState();
   PLACEHOLDER_PROGRESS.forEach((entry) => progress.set(entry));
+
+  const history = useHistoryStore.getState();
+  PLACEHOLDER_HISTORY.forEach((entry) => history.record(entry));
 
   const watchlist = useWatchlistStore.getState();
   PLACEHOLDER_WATCHLIST_IDS.forEach((id) => {
@@ -42,6 +47,11 @@ export function clearPlaceholderData(): void {
   Object.keys(progress.byItem)
     .filter((id) => placeholderIds.has(id))
     .forEach((id) => progress.clear(id));
+
+  const history = useHistoryStore.getState();
+  history.entries
+    .filter((e) => placeholderIds.has(e.itemId))
+    .forEach((e) => history.forget(e.itemId));
 
   const watchlist = useWatchlistStore.getState();
   watchlist.ids.filter((id) => placeholderIds.has(id)).forEach((id) => watchlist.remove(id));

@@ -10,6 +10,10 @@ on:
         description: 'Include invented sample data (for checking the screens on a phone)'
         type: boolean
         default: true
+      experimental_dash:
+        description: 'Turn on DASH (.mpd) links so they can be tested on a phone (not verified)'
+        type: boolean
+        default: false
       publish_release:
         description: 'Also publish this APK as a GitHub pre-release (needs your approval to use)'
         type: boolean
@@ -25,6 +29,7 @@ jobs:
     env:
       CI: '1'
       EXPO_PUBLIC_NOVA_SAMPLE_DATA: ${{ inputs.sample_data && '1' || '0' }}
+      EXPO_PUBLIC_NOVA_EXPERIMENTAL_DASH: ${{ inputs.experimental_dash && '1' || '0' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

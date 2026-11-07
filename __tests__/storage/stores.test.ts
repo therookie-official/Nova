@@ -5,15 +5,13 @@ import { createListStore } from '@/store/createListStore';
 import { createProgressStore } from '@/store/progressStore';
 import { createSettingsStore } from '@/store/settingsStore';
 import { createWatchlistStore } from '@/store/watchlistStore';
-import type { LibraryItem, PlaybackProgress, Settings } from '@/types/media';
+import type { MediaItem, PlaybackProgress, Settings } from '@/types/media';
 
-const item = (id: string, title = id): LibraryItem => ({
+const item = (id: string, title = id): MediaItem => ({
   id,
-  title,
-  genres: [],
-  source: { kind: 'remote', url: `https://example.com/${id}.mp4`, format: 'progressive' },
+  source: { kind: 'remote', uri: `https://example.com/${id}.mp4`, format: 'progressive' },
   addedAt: 1,
-  metadata: 'manual',
+  metadata: { title, genres: [], origin: 'manual' },
 });
 
 /** A repository over a shared memory store, so a second one models an app restart. */
@@ -27,12 +25,7 @@ function repoOn<T>(
 }
 
 const libraryRepo = (store: ReturnType<typeof createMemoryStore>) =>
-  repoOn<LibraryItem[]>(
-    store,
-    'lib',
-    () => [],
-    Array.isArray as (d: unknown) => d is LibraryItem[],
-  );
+  repoOn<MediaItem[]>(store, 'lib', () => [], Array.isArray as (d: unknown) => d is MediaItem[]);
 
 describe('list store (library)', () => {
   it('adds, updates and removes, saving each change', () => {
@@ -41,10 +34,10 @@ describe('list store (library)', () => {
 
     lib.getState().add(item('a'));
     lib.getState().add(item('b'));
-    lib.getState().update('a', { title: 'Renamed' });
+    lib.getState().update('a', { metadata: { title: 'Renamed', genres: [], origin: 'manual' } });
     lib.getState().remove('b');
 
-    expect(lib.getState().items.map((i) => [i.id, i.title])).toEqual([['a', 'Renamed']]);
+    expect(lib.getState().items.map((i) => [i.id, i.metadata.title])).toEqual([['a', 'Renamed']]);
   });
 
   it('replaces an item added twice with the same id', () => {
@@ -52,7 +45,7 @@ describe('list store (library)', () => {
     lib.getState().add(item('a', 'First'));
     lib.getState().add(item('a', 'Second'));
     expect(lib.getState().items).toHaveLength(1);
-    expect(lib.getState().items[0].title).toBe('Second');
+    expect(lib.getState().items[0].metadata.title).toBe('Second');
   });
 
   it('persists across a restart', () => {
@@ -144,7 +137,7 @@ describe('placeholder data', () => {
     expect(PLACEHOLDER_LIBRARY.length).toBeGreaterThan(0);
     for (const entry of PLACEHOLDER_LIBRARY) {
       expect(entry.isPlaceholder).toBe(true);
-      expect(entry.source.kind === 'remote' && entry.source.url).toMatch(
+      expect(entry.source.kind === 'remote' && entry.source.uri).toMatch(
         /^https:\/\/example\.com\//,
       );
     }

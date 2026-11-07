@@ -5,3 +5,4 @@ export { Chip } from './Chip';
 export { MediaCard } from './MediaCard';
 export { LoadingState, SkeletonBlock, EmptyState, ErrorState } from './States';
 export { Screen, SectionHeader } from './Screen';
+export { TextField } from './TextField';

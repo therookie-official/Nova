@@ -1,9 +1,12 @@
-import { FlatList, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, View } from 'react-native';
 import { Button, Card, Chip, EmptyState, Screen } from '@/components/ui';
-import { useRemoteSourcesStore } from '@/store/libraryStore';
+import { useAppNavigation } from '@/hooks/useAppNavigation';
+import { useLibraryStore, useRemoteSourcesStore } from '@/store/libraryStore';
 
 export function RemoteSourcesScreen() {
+  const { openAddRemote, openDetails } = useAppNavigation();
   const sources = useRemoteSourcesStore((state) => state.items);
+  const library = useLibraryStore((state) => state.items);
 
   return (
     <Screen
@@ -20,10 +23,9 @@ export function RemoteSourcesScreen() {
         <Button
           label="Add link"
           icon="add-circle-outline"
-          disabled
-          accessibilityHint="Not available yet"
+          onPress={openAddRemote}
+          testID="add-remote"
         />
-        <Text className="text-sm text-textMuted">Adding links is not available yet.</Text>
       </View>
 
       {sources.length === 0 ? (
@@ -38,15 +40,25 @@ export function RemoteSourcesScreen() {
           keyExtractor={(source) => source.id}
           contentContainerStyle={{ gap: 12, paddingHorizontal: 16, paddingBottom: 24 }}
           renderItem={({ item }) => (
-            <Card testID={`source-${item.id}`}>
-              <View className="flex-row items-center justify-between gap-3">
-                <Text className="flex-1 text-base font-semibold text-text">{item.label}</Text>
-                {item.isPlaceholder ? <Chip label="Sample" /> : null}
-              </View>
-              <Text numberOfLines={1} className="mt-1 text-sm text-textMuted">
-                {item.url}
-              </Text>
-            </Card>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${item.label}`}
+              disabled={!library.some((entry) => entry.source.uri === item.url)}
+              onPress={() => {
+                const match = library.find((entry) => entry.source.uri === item.url);
+                if (match) openDetails(match.id);
+              }}
+            >
+              <Card testID={`source-${item.id}`}>
+                <View className="flex-row items-center justify-between gap-3">
+                  <Text className="flex-1 text-base font-semibold text-text">{item.label}</Text>
+                  {item.isPlaceholder ? <Chip label="Sample" /> : null}
+                </View>
+                <Text numberOfLines={1} className="mt-1 text-sm text-textMuted">
+                  {item.url}
+                </Text>
+              </Card>
+            </Pressable>
           )}
         />
       )}

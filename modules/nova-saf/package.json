@@ -1,0 +1,8 @@
+{
+  "name": "nova-saf",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Nova local module: keeps Android access to videos the user picked (content:// URIs).",
+  "main": "src/index.ts",
+  "license": "UNLICENSED"
+}
